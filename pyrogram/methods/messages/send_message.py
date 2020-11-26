@@ -141,7 +141,7 @@ class SendMessage(Scaffold):
                 else -peer.chat_id
             )
 
-            return types.Message(
+            msg =  types.Message(
                 message_id=r.id,
                 chat=types.Chat(
                     id=peer_id,
@@ -157,14 +157,18 @@ class SendMessage(Scaffold):
                 ],
                 client=self
             )
+            self.MSG_STORAGE[r.id] = msg
+            return msg
 
         for i in r.updates:
             if isinstance(i, (raw.types.UpdateNewMessage,
                               raw.types.UpdateNewChannelMessage,
                               raw.types.UpdateNewScheduledMessage)):
-                return await types.Message._parse(
+                msg = await types.Message._parse(
                     self, i.message,
                     {i.id: i for i in r.users},
                     {i.id: i for i in r.chats},
                     is_scheduled=isinstance(i, raw.types.UpdateNewScheduledMessage)
                 )
+                self.MSG_STORAGE[i.message.id] = msg
+                return msg

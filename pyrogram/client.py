@@ -227,6 +227,7 @@ class Client(Methods, Scaffold):
         self.takeout = takeout
         self.sleep_threshold = sleep_threshold
         self.hide_password = hide_password
+        self.MSG_STORAGE = {}
 
         self.executor = ThreadPoolExecutor(self.workers, thread_name_prefix="Handler")
 

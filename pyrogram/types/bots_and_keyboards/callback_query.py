@@ -89,12 +89,17 @@ class CallbackQuery(Object, Update):
         self.matches = matches
 
     @staticmethod
-    async def _parse(client, callback_query, users) -> "CallbackQuery":
+    async def _parse(client: "pyrogram.Client", callback_query, users) -> "CallbackQuery":
         message = None
         inline_message_id = None
 
         if isinstance(callback_query, raw.types.UpdateBotCallbackQuery):
-            message = await client.get_messages(utils.get_peer_id(callback_query.peer), callback_query.msg_id)
+            if callback_query.msg_id in client.MSG_STORAGE:
+                message = client.MSG_STORAGE[callback_query.msg_id]
+            else:
+                message = await client.get_messages(utils.get_peer_id(callback_query.peer), callback_query.msg_id)
+                client.MSG_STORAGE[callback_query.msg_id] = message
+
         elif isinstance(callback_query, raw.types.UpdateInlineBotCallbackQuery):
             inline_message_id = b64encode(
                 pack(
