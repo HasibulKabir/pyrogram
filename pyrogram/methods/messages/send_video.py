@@ -18,13 +18,14 @@
 
 import os
 import re
-from typing import Union, BinaryIO
+from typing import Union, BinaryIO, List
 
 from pyrogram import StopTransmission
 from pyrogram import raw
 from pyrogram import types
 from pyrogram import utils
 from pyrogram.errors import FilePartMissing
+from pyrogram.file_id import FileType
 from pyrogram.scaffold import Scaffold
 
 
@@ -33,9 +34,9 @@ class SendVideo(Scaffold):
         self,
         chat_id: Union[int, str],
         video: Union[str, BinaryIO],
-        file_ref: str = None,
         caption: str = "",
         parse_mode: Union[str, None] = object,
+        caption_entities: List["types.MessageEntity"] = None,
         duration: int = 0,
         width: int = 0,
         height: int = 0,
@@ -69,10 +70,6 @@ class SendVideo(Scaffold):
                 pass a file path as string to upload a new video that exists on your local machine, or
                 pass a binary file-like object with its attribute ".name" set for in-memory uploads.
 
-            file_ref (``str``, *optional*):
-                A valid file reference obtained by a recently fetched media message.
-                To be used in combination with a file id in case a file reference is needed.
-
             caption (``str``, *optional*):
                 Video caption, 0-1024 characters.
 
@@ -82,6 +79,9 @@ class SendVideo(Scaffold):
                 Pass "markdown" or "md" to enable Markdown-style parsing only.
                 Pass "html" to enable HTML-style parsing only.
                 Pass None to completely disable style parsing.
+
+            caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in the caption, which can be specified instead of __parse_mode__.
 
             duration (``int``, *optional*):
                 Duration of sent video in seconds.
@@ -187,7 +187,7 @@ class SendVideo(Scaffold):
                         url=video
                     )
                 else:
-                    media = utils.get_input_media_from_file_id(video, file_ref, 4)
+                    media = utils.get_input_media_from_file_id(video, FileType.VIDEO)
             else:
                 thumb = await self.save_file(thumb)
                 file = await self.save_file(video, progress=progress, progress_args=progress_args)
@@ -217,7 +217,7 @@ class SendVideo(Scaffold):
                             random_id=self.rnd_id(),
                             schedule_date=schedule_date,
                             reply_markup=reply_markup.write() if reply_markup else None,
-                            **await self.parser.parse(caption, parse_mode)
+                            **await utils.parse_text_entities(self, caption, parse_mode, caption_entities)
                         )
                     )
                 except FilePartMissing as e:

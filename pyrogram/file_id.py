@@ -159,16 +159,16 @@ class FileId:
         minor: int = MINOR,
         file_type: FileType,
         dc_id: int,
-        file_reference: bytes = None,
+        file_reference: bytes = b"",
         url: str = None,
         media_id: int = None,
         access_hash: int = None,
         volume_id: int = None,
         thumbnail_source: ThumbnailSource = None,
-        thumbnail_file_type: str = None,
+        thumbnail_file_type: FileType = None,
         thumbnail_size: str = None,
         secret: int = None,
-        local_id: str = None,
+        local_id: int = None,
         chat_id: int = None,
         chat_access_hash: int = None,
         sticker_set_id: int = None,
@@ -239,7 +239,7 @@ class FileId:
                 access_hash=access_hash
             )
 
-        file_reference = Bytes.read(buffer) if has_file_reference else None
+        file_reference = Bytes.read(buffer) if has_file_reference else b""
         media_id, access_hash = struct.unpack("<qq", buffer.read(16))
 
         if file_type in PHOTO_TYPES:
@@ -335,8 +335,8 @@ class FileId:
             )
 
     def encode(self, *, major: int = None, minor: int = None):
-        major = major if major is not None else self.MAJOR
-        minor = minor if minor is not None else self.MINOR
+        major = major if major is not None else self.major
+        minor = minor if minor is not None else self.minor
 
         buffer = BytesIO()
 
@@ -395,7 +395,7 @@ class FileId:
         return b64_encode(rle_encode(buffer.getvalue()))
 
     def __str__(self):
-        return str(self.__dict__)
+        return str({k: v for k, v in self.__dict__.items() if v is not None})
 
 
 class FileUniqueType(IntEnum):
@@ -475,4 +475,4 @@ class FileUniqueId:
         return b64_encode(rle_encode(string))
 
     def __str__(self):
-        return str(self.__dict__)
+        return str({k: v for k, v in self.__dict__.items() if v is not None})

@@ -24,6 +24,7 @@ from typing import Union, List
 from pyrogram import raw
 from pyrogram import types
 from pyrogram import utils
+from pyrogram.file_id import FileType
 from pyrogram.scaffold import Scaffold
 
 log = logging.getLogger(__name__)
@@ -41,7 +42,8 @@ class SendMediaGroup(Scaffold):
             "types.InputMediaDocument"
         ]],
         disable_notification: bool = None,
-        reply_to_message_id: int = None
+        reply_to_message_id: int = None,
+        schedule_date: int = None,
     ) -> List["types.Message"]:
         """Send a group of photos or videos as an album.
 
@@ -60,6 +62,9 @@ class SendMediaGroup(Scaffold):
 
             reply_to_message_id (``int``, *optional*):
                 If the message is a reply, ID of the original message.
+
+            schedule_date (``int``, *optional*):
+                Date when the message will be automatically sent. Unix time.
 
         Returns:
             List of :obj:`~pyrogram.types.Message`: On success, a list of the sent messages is returned.
@@ -117,7 +122,7 @@ class SendMediaGroup(Scaffold):
                         )
                     )
                 else:
-                    media = utils.get_input_media_from_file_id(i.media, i.file_ref, 2)
+                    media = utils.get_input_media_from_file_id(i.media, FileType.PHOTO)
             elif isinstance(i, types.InputMediaVideo):
                 if os.path.isfile(i.media):
                     media = await self.send(
@@ -165,7 +170,7 @@ class SendMediaGroup(Scaffold):
                         )
                     )
                 else:
-                    media = utils.get_input_media_from_file_id(i.media, i.file_ref, 4)
+                    media = utils.get_input_media_from_file_id(i.media, FileType.VIDEO)
             elif isinstance(i, types.InputMediaAudio):
                 if os.path.isfile(i.media):
                     media = await self.send(
@@ -212,7 +217,7 @@ class SendMediaGroup(Scaffold):
                         )
                     )
                 else:
-                    media = utils.get_input_media_from_file_id(i.media, i.file_ref, 9)
+                    media = utils.get_input_media_from_file_id(i.media, FileType.AUDIO)
             elif isinstance(i, types.InputMediaDocument):
                 if os.path.isfile(i.media):
                     media = await self.send(
@@ -254,7 +259,7 @@ class SendMediaGroup(Scaffold):
                         )
                     )
                 else:
-                    media = utils.get_input_media_from_file_id(i.media, i.file_ref, 5)
+                    media = utils.get_input_media_from_file_id(i.media, FileType.DOCUMENT)
 
             multi_media.append(
                 raw.types.InputSingleMedia(
@@ -269,7 +274,8 @@ class SendMediaGroup(Scaffold):
                 peer=await self.resolve_peer(chat_id),
                 multi_media=multi_media,
                 silent=disable_notification or None,
-                reply_to_msg_id=reply_to_message_id
+                reply_to_msg_id=reply_to_message_id,
+                schedule_date=schedule_date
             ),
             sleep_threshold=60
         )
@@ -278,7 +284,9 @@ class SendMediaGroup(Scaffold):
             self,
             raw.types.messages.Messages(
                 messages=[m.message for m in filter(
-                    lambda u: isinstance(u, (raw.types.UpdateNewMessage, raw.types.UpdateNewChannelMessage)),
+                    lambda u: isinstance(u, (raw.types.UpdateNewMessage,
+                                             raw.types.UpdateNewChannelMessage,
+                                             raw.types.UpdateNewScheduledMessage)),
                     r.updates
                 )],
                 users=r.users,
