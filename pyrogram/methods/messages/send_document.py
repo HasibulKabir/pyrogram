@@ -1,5 +1,5 @@
 #  Pyrogram - Telegram MTProto API Client Library for Python
-#  Copyright (C) 2017-2020 Dan <https://github.com/delivrance>
+#  Copyright (C) 2017-2021 Dan <https://github.com/delivrance>
 #
 #  This file is part of Pyrogram.
 #
@@ -18,7 +18,7 @@
 
 import os
 import re
-from typing import Union, BinaryIO, List
+from typing import Union, BinaryIO, List, Optional
 
 from pyrogram import StopTransmission
 from pyrogram import raw
@@ -36,7 +36,7 @@ class SendDocument(Scaffold):
         document: Union[str, BinaryIO],
         thumb: Union[str, BinaryIO] = None,
         caption: str = "",
-        parse_mode: Union[str, None] = object,
+        parse_mode: Optional[str] = object,
         caption_entities: List["types.MessageEntity"] = None,
         file_name: str = None,
         force_document: bool = None,
@@ -51,7 +51,7 @@ class SendDocument(Scaffold):
         ] = None,
         progress: callable = None,
         progress_args: tuple = ()
-    ) -> Union["types.Message", None]:
+    ) -> Optional["types.Message"]:
         """Send generic files.
 
         Parameters:
@@ -84,7 +84,7 @@ class SendDocument(Scaffold):
                 Pass None to completely disable style parsing.
 
             caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
-                List of special entities that appear in the caption, which can be specified instead of __parse_mode__.
+                List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
 
             file_name (``str``, *optional*):
                 File name of the document sent.
@@ -194,7 +194,7 @@ class SendDocument(Scaffold):
                             reply_to_msg_id=reply_to_message_id,
                             random_id=self.rnd_id(),
                             schedule_date=schedule_date,
-                            reply_markup=reply_markup.write() if reply_markup else None,
+                            reply_markup=await reply_markup.write(self) if reply_markup else None,
                             **await utils.parse_text_entities(self, caption, parse_mode, caption_entities)
                         )
                     )

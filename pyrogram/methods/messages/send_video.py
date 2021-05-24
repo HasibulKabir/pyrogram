@@ -1,5 +1,5 @@
 #  Pyrogram - Telegram MTProto API Client Library for Python
-#  Copyright (C) 2017-2020 Dan <https://github.com/delivrance>
+#  Copyright (C) 2017-2021 Dan <https://github.com/delivrance>
 #
 #  This file is part of Pyrogram.
 #
@@ -18,7 +18,7 @@
 
 import os
 import re
-from typing import Union, BinaryIO, List
+from typing import Union, BinaryIO, List, Optional
 
 from pyrogram import StopTransmission
 from pyrogram import raw
@@ -35,8 +35,9 @@ class SendVideo(Scaffold):
         chat_id: Union[int, str],
         video: Union[str, BinaryIO],
         caption: str = "",
-        parse_mode: Union[str, None] = object,
+        parse_mode: Optional[str] = object,
         caption_entities: List["types.MessageEntity"] = None,
+        ttl_seconds: int = None,
         duration: int = 0,
         width: int = 0,
         height: int = 0,
@@ -54,7 +55,7 @@ class SendVideo(Scaffold):
         ] = None,
         progress: callable = None,
         progress_args: tuple = ()
-    ) -> Union["types.Message", None]:
+    ) -> Optional["types.Message"]:
         """Send video files.
 
         Parameters:
@@ -81,7 +82,12 @@ class SendVideo(Scaffold):
                 Pass None to completely disable style parsing.
 
             caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
-                List of special entities that appear in the caption, which can be specified instead of __parse_mode__.
+                List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
+
+            ttl_seconds (``int``, *optional*):
+                Self-Destruct Timer.
+                If you set a timer, the video will self-destruct in *ttl_seconds*
+                seconds after it was viewed.
 
             duration (``int``, *optional*):
                 Duration of sent video in seconds.
@@ -155,6 +161,9 @@ class SendVideo(Scaffold):
                 # Add caption to the video
                 app.send_video("me", "video.mp4", caption="recording")
 
+                # Send self-destructing video
+                app.send_video("me", "video.mp4", ttl_seconds=10)
+
                 # Keep track of the progress while uploading
                 def progress(current, total):
                     print(f"{current * 100 / total:.1f}%")
@@ -171,6 +180,7 @@ class SendVideo(Scaffold):
                     media = raw.types.InputMediaUploadedDocument(
                         mime_type=self.guess_mime_type(video) or "video/mp4",
                         file=file,
+                        ttl_seconds=ttl_seconds,
                         thumb=thumb,
                         attributes=[
                             raw.types.DocumentAttributeVideo(
@@ -184,7 +194,8 @@ class SendVideo(Scaffold):
                     )
                 elif re.match("^https?://", video):
                     media = raw.types.InputMediaDocumentExternal(
-                        url=video
+                        url=video,
+                        ttl_seconds=ttl_seconds
                     )
                 else:
                     media = utils.get_input_media_from_file_id(video, FileType.VIDEO)
@@ -194,6 +205,7 @@ class SendVideo(Scaffold):
                 media = raw.types.InputMediaUploadedDocument(
                     mime_type=self.guess_mime_type(video.name) or "video/mp4",
                     file=file,
+                    ttl_seconds=ttl_seconds,
                     thumb=thumb,
                     attributes=[
                         raw.types.DocumentAttributeVideo(
@@ -216,7 +228,7 @@ class SendVideo(Scaffold):
                             reply_to_msg_id=reply_to_message_id,
                             random_id=self.rnd_id(),
                             schedule_date=schedule_date,
-                            reply_markup=reply_markup.write() if reply_markup else None,
+                            reply_markup=await reply_markup.write(self) if reply_markup else None,
                             **await utils.parse_text_entities(self, caption, parse_mode, caption_entities)
                         )
                     )

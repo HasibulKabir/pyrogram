@@ -1,5 +1,5 @@
 #  Pyrogram - Telegram MTProto API Client Library for Python
-#  Copyright (C) 2017-2020 Dan <https://github.com/delivrance>
+#  Copyright (C) 2017-2021 Dan <https://github.com/delivrance>
 #
 #  This file is part of Pyrogram.
 #
@@ -24,7 +24,7 @@ import os
 import struct
 from concurrent.futures.thread import ThreadPoolExecutor
 from getpass import getpass
-from typing import Union, List, Dict
+from typing import Union, List, Dict, Optional
 
 import pyrogram
 from pyrogram import raw
@@ -33,19 +33,10 @@ from pyrogram.file_id import FileId, FileType, PHOTO_TYPES, DOCUMENT_TYPES
 
 
 async def ainput(prompt: str = "", *, hide: bool = False):
+    """Just like the built-in input, but async"""
     with ThreadPoolExecutor(1) as executor:
         func = functools.partial(getpass if hide else input, prompt)
         return await asyncio.get_event_loop().run_in_executor(executor, func)
-
-
-def get_offset_date(dialogs):
-    for m in reversed(dialogs.messages):
-        if isinstance(m, raw.types.MessageEmpty):
-            continue
-        else:
-            return m.date
-    else:
-        return 0
 
 
 def get_input_media_from_file_id(
@@ -61,10 +52,10 @@ def get_input_media_from_file_id(
     file_type = decoded.file_type
 
     if expected_file_type is not None and file_type != expected_file_type:
-        raise ValueError(f'Expected: "{expected_file_type}", got "{file_type}" file_id instead')
+        raise ValueError(f"Expected {expected_file_type.name}, got {file_type.name} file id instead")
 
     if file_type in (FileType.THUMBNAIL, FileType.CHAT_PHOTO):
-        raise ValueError(f"This file_id can only be used for download: {file_id}")
+        raise ValueError(f"This file id can only be used for download: {file_id}")
 
     if file_type in PHOTO_TYPES:
         return raw.types.InputMediaPhoto(
@@ -100,10 +91,13 @@ async def parse_messages(client, messages: "raw.types.messages.Messages", replie
         parsed_messages.append(await types.Message._parse(client, message, users, chats, replies=0))
 
     if replies:
-        messages_with_replies = {i.id: getattr(i, "reply_to_msg_id", None) for i in messages.messages}
-        reply_message_ids = [i[0] for i in filter(lambda x: x[1] is not None, messages_with_replies.items())]
+        messages_with_replies = {
+            i.id: i.reply_to.reply_to_msg_id
+            for i in messages.messages
+            if not isinstance(i, raw.types.MessageEmpty) and i.reply_to
+        }
 
-        if reply_message_ids:
+        if messages_with_replies:
             # We need a chat id, but some messages might be empty (no chat attribute available)
             # Scan until we find a message with a chat available (there must be one, because we are fetching replies)
             for m in parsed_messages:
@@ -115,12 +109,12 @@ async def parse_messages(client, messages: "raw.types.messages.Messages", replie
 
             reply_messages = await client.get_messages(
                 chat_id,
-                reply_to_message_ids=reply_message_ids,
+                reply_to_message_ids=messages_with_replies.keys(),
                 replies=replies - 1
             )
 
             for message in parsed_messages:
-                reply_id = messages_with_replies[message.message_id]
+                reply_id = messages_with_replies.get(message.message_id, None)
 
                 for reply in reply_messages:
                     if reply.message_id == reply_id:
@@ -168,7 +162,7 @@ MIN_CHAT_ID = -2147483647
 MAX_USER_ID = 2147483647
 
 
-def get_raw_peer_id(peer: raw.base.Peer) -> Union[int, None]:
+def get_raw_peer_id(peer: raw.base.Peer) -> Optional[int]:
     """Get the raw peer id from a Peer object"""
     if isinstance(peer, raw.types.PeerUser):
         return peer.user_id

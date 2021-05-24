@@ -1,5 +1,5 @@
 #  Pyrogram - Telegram MTProto API Client Library for Python
-#  Copyright (C) 2017-2020 Dan <https://github.com/delivrance>
+#  Copyright (C) 2017-2021 Dan <https://github.com/delivrance>
 #
 #  This file is part of Pyrogram.
 #
@@ -17,6 +17,7 @@
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
 from enum import Enum, auto
+from typing import Optional
 
 import pyrogram
 from pyrogram import raw
@@ -76,13 +77,23 @@ class MessageEntity(Object):
 
     Parameters:
         type (``str``):
-            Type of the entity.
-            Can be "mention" (``@username``), "hashtag" (``#hashtag``), "cashtag" (``$PYRO``),
-            "bot_command" (``/start@pyrogrambot``), "url" (``https://pyrogram.org``),
-            "email" (``do-not-reply@pyrogram.org``), "phone_number" (``+1-420-069-1337``), "bold" (**bold text**),
-            "italic" (*italic text*), "underline" (underlined text), "strikethrough" (strikethrough text),
-            "code" (monowidth string), "pre" (monowidth block), "text_link" (for clickable text URLs),
-            "text_mention" (for users without usernames).
+            Type of the entity. Can be:
+
+            - "mention": ``@username``.
+            - "hashtag": ``#hashtag``.
+            - "cashtag": ``$PYRO``.
+            - "bot_command": ``/start@pyrogrambot``.
+            - "url": ``https://pyrogram.org`` (see *url* below).
+            - "email": ``do-not-reply@pyrogram.org``.
+            - "phone_number": ``+69-420-1337``.
+            - "bold": **bold text**.
+            - "italic": *italic text*.
+            - "underline": underlined text.
+            - "strikethrough": strikethrough text.
+            - "code": monowidth string.
+            - "pre": monowidth block (see *language* below).
+            - "text_link": for clickable text URLs.
+            - "text_mention": for users without usernames (see *user* below).
 
         offset (``int``):
             Offset in UTF-16 code units to the start of the entity.
@@ -121,7 +132,7 @@ class MessageEntity(Object):
         self.language = language
 
     @staticmethod
-    def _parse(client, entity, users: dict) -> "MessageEntity" or None:
+    def _parse(client, entity, users: dict) -> Optional["MessageEntity"]:
         type = RAW_ENTITIES_TO_TYPE.get(entity.__class__, None)
 
         if type is None:

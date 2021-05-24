@@ -1,5 +1,5 @@
 #  Pyrogram - Telegram MTProto API Client Library for Python
-#  Copyright (C) 2017-2020 Dan <https://github.com/delivrance>
+#  Copyright (C) 2017-2021 Dan <https://github.com/delivrance>
 #
 #  This file is part of Pyrogram.
 #
@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, List
+from typing import Optional, List
 
 from .input_media import InputMedia
 from ..messages_and_media import MessageEntity
@@ -29,7 +29,8 @@ class InputMediaAnimation(InputMedia):
         media (``str``):
             Animation to send.
             Pass a file_id as string to send a file that exists on the Telegram servers or
-            pass a file path as string to upload a new file that exists on your local machine.
+            pass a file path as string to upload a new file that exists on your local machine or
+            pass an HTTP URL as a string for Telegram to get an animation from the Internet.
 
         thumb (``str``, *optional*):
             Thumbnail of the animation file sent.
@@ -38,7 +39,8 @@ class InputMediaAnimation(InputMedia):
             Thumbnails can't be reused and can be only uploaded as a new file.
 
         caption (``str``, *optional*):
-            Caption of the animation to be sent, 0-1024 characters
+            Caption of the animation to be sent, 0-1024 characters.
+            If not specified, the original caption is kept. Pass "" (empty string) to remove the caption.
 
         parse_mode (``str``, *optional*):
             By default, texts are parsed using both Markdown and HTML styles.
@@ -48,7 +50,7 @@ class InputMediaAnimation(InputMedia):
             Pass None to completely disable style parsing.
 
         caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
-            List of special entities that appear in the caption, which can be specified instead of __parse_mode__.
+            List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
 
         width (``int``, *optional*):
             Animation width.
@@ -65,7 +67,7 @@ class InputMediaAnimation(InputMedia):
         media: str,
         thumb: str = None,
         caption: str = "",
-        parse_mode: Union[str, None] = object,
+        parse_mode: Optional[str] = object,
         caption_entities: List[MessageEntity] = None,
         width: int = 0,
         height: int = 0,

@@ -1,5 +1,5 @@
 #  Pyrogram - Telegram MTProto API Client Library for Python
-#  Copyright (C) 2017-2020 Dan <https://github.com/delivrance>
+#  Copyright (C) 2017-2021 Dan <https://github.com/delivrance>
 #
 #  This file is part of Pyrogram.
 #
@@ -20,7 +20,7 @@ import asyncio
 import os
 import time
 from datetime import datetime
-from typing import Union
+from typing import Union, Optional
 
 from pyrogram import types
 from pyrogram.file_id import FileId, FileType, PHOTO_TYPES
@@ -37,7 +37,7 @@ class DownloadMedia(Scaffold):
         block: bool = True,
         progress: callable = None,
         progress_args: tuple = ()
-    ) -> Union[str, None]:
+    ) -> Optional[str]:
         """Download the media from a message.
 
         Parameters:
@@ -124,7 +124,7 @@ class DownloadMedia(Scaffold):
         file_type = file_id_obj.file_type
         media_file_name = getattr(media, "file_name", "")
         file_size = getattr(media, "file_size", 0)
-        mime_type = getattr(media, "mime_type", None)
+        mime_type = getattr(media, "mime_type", "")
         date = getattr(media, "date", 0)
 
         directory, file_name = os.path.split(file_name)

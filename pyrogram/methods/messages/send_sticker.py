@@ -1,5 +1,5 @@
 #  Pyrogram - Telegram MTProto API Client Library for Python
-#  Copyright (C) 2017-2020 Dan <https://github.com/delivrance>
+#  Copyright (C) 2017-2021 Dan <https://github.com/delivrance>
 #
 #  This file is part of Pyrogram.
 #
@@ -18,7 +18,7 @@
 
 import os
 import re
-from typing import Union, BinaryIO
+from typing import Union, BinaryIO, Optional
 
 from pyrogram import StopTransmission
 from pyrogram import raw
@@ -45,7 +45,7 @@ class SendSticker(Scaffold):
         ] = None,
         progress: callable = None,
         progress_args: tuple = ()
-    ) -> Union["types.Message", None]:
+    ) -> Optional["types.Message"]:
         """Send static .webp or animated .tgs stickers.
 
         Parameters:
@@ -150,7 +150,7 @@ class SendSticker(Scaffold):
                             reply_to_msg_id=reply_to_message_id,
                             random_id=self.rnd_id(),
                             schedule_date=schedule_date,
-                            reply_markup=reply_markup.write() if reply_markup else None,
+                            reply_markup=await reply_markup.write(self) if reply_markup else None,
                             message=""
                         )
                     )

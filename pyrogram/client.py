@@ -1,5 +1,5 @@
 #  Pyrogram - Telegram MTProto API Client Library for Python
-#  Copyright (C) 2017-2020 Dan <https://github.com/delivrance>
+#  Copyright (C) 2017-2021 Dan <https://github.com/delivrance>
 #
 #  This file is part of Pyrogram.
 #
@@ -29,7 +29,7 @@ from configparser import ConfigParser
 from hashlib import sha256
 from importlib import import_module
 from pathlib import Path
-from typing import Union, List
+from typing import Union, List, Optional
 
 import pyrogram
 from pyrogram import raw
@@ -396,7 +396,10 @@ class Client(Methods, Scaffold):
         return self._parse_mode
 
     @parse_mode.setter
-    def parse_mode(self, parse_mode: Union[str, None] = "combined"):
+    def parse_mode(self, parse_mode: Optional[str] = "combined"):
+        if isinstance(parse_mode, str):
+            parse_mode = parse_mode.lower()
+
         if parse_mode not in self.PARSE_MODES:
             raise ValueError('parse_mode must be one of {} or None. Not "{}"'.format(
                 ", ".join(f'"{m}"' for m in self.PARSE_MODES[:-1]),
@@ -406,7 +409,7 @@ class Client(Methods, Scaffold):
         self._parse_mode = parse_mode
 
     # TODO: redundant, remove in next major version
-    def set_parse_mode(self, parse_mode: Union[str, None] = "combined"):
+    def set_parse_mode(self, parse_mode: Optional[str] = "combined"):
         """Set the parse mode to be used globally by the client.
 
         When setting the parse mode with this method, all other methods having a *parse_mode* parameter will follow the
@@ -585,7 +588,8 @@ class Client(Methods, Scaffold):
                     {c.id: c for c in diff.chats}
                 ))
             else:
-                self.dispatcher.updates_queue.put_nowait((diff.other_updates[0], {}, {}))
+                if diff.other_updates:  # The other_updates list can be empty
+                    self.dispatcher.updates_queue.put_nowait((diff.other_updates[0], {}, {}))
         elif isinstance(updates, raw.types.UpdateShort):
             self.dispatcher.updates_queue.put_nowait((updates.update, {}, {}))
         elif isinstance(updates, raw.types.UpdatesTooLong):
@@ -716,15 +720,14 @@ class Client(Methods, Scaffold):
                     for name in vars(module).keys():
                         # noinspection PyBroadException
                         try:
-                            handler, group = getattr(module, name).handler
+                            for handler, group in getattr(module, name).handlers:
+                                if isinstance(handler, Handler) and isinstance(group, int):
+                                    self.add_handler(handler, group)
 
-                            if isinstance(handler, Handler) and isinstance(group, int):
-                                self.add_handler(handler, group)
+                                    log.info('[{}] [LOAD] {}("{}") in group {} from "{}"'.format(
+                                        self.session_name, type(handler).__name__, name, group, module_path))
 
-                                log.info('[{}] [LOAD] {}("{}") in group {} from "{}"'.format(
-                                    self.session_name, type(handler).__name__, name, group, module_path))
-
-                                count += 1
+                                    count += 1
                         except Exception:
                             pass
             else:
@@ -749,15 +752,14 @@ class Client(Methods, Scaffold):
                     for name in handlers:
                         # noinspection PyBroadException
                         try:
-                            handler, group = getattr(module, name).handler
+                            for handler, group in getattr(module, name).handlers:
+                                if isinstance(handler, Handler) and isinstance(group, int):
+                                    self.add_handler(handler, group)
 
-                            if isinstance(handler, Handler) and isinstance(group, int):
-                                self.add_handler(handler, group)
+                                    log.info('[{}] [LOAD] {}("{}") in group {} from "{}"'.format(
+                                        self.session_name, type(handler).__name__, name, group, module_path))
 
-                                log.info('[{}] [LOAD] {}("{}") in group {} from "{}"'.format(
-                                    self.session_name, type(handler).__name__, name, group, module_path))
-
-                                count += 1
+                                    count += 1
                         except Exception:
                             if warn_non_existent_functions:
                                 log.warning('[{}] [LOAD] Ignoring non-existent function "{}" from "{}"'.format(
@@ -785,15 +787,14 @@ class Client(Methods, Scaffold):
                     for name in handlers:
                         # noinspection PyBroadException
                         try:
-                            handler, group = getattr(module, name).handler
+                            for handler, group in getattr(module, name).handlers:
+                                if isinstance(handler, Handler) and isinstance(group, int):
+                                    self.remove_handler(handler, group)
 
-                            if isinstance(handler, Handler) and isinstance(group, int):
-                                self.remove_handler(handler, group)
+                                    log.info('[{}] [UNLOAD] {}("{}") from group {} in "{}"'.format(
+                                        self.session_name, type(handler).__name__, name, group, module_path))
 
-                                log.info('[{}] [UNLOAD] {}("{}") from group {} in "{}"'.format(
-                                    self.session_name, type(handler).__name__, name, group, module_path))
-
-                                count -= 1
+                                    count -= 1
                         except Exception:
                             if warn_non_existent_functions:
                                 log.warning('[{}] [UNLOAD] Ignoring non-existent function "{}" from "{}"'.format(
@@ -866,21 +867,20 @@ class Client(Methods, Scaffold):
             else:
                 if file_id.chat_access_hash == 0:
                     peer = raw.types.InputPeerChat(
-                        chat_id=file_id.chat_id
+                        chat_id=-file_id.chat_id
                     )
                 else:
                     peer = raw.types.InputPeerChannel(
-                        channel_id=file_id.chat_id,
+                        channel_id=utils.get_channel_id(file_id.chat_id),
                         access_hash=file_id.chat_access_hash
                     )
 
             location = raw.types.InputPeerPhotoFileLocation(
                 peer=peer,
-                volume_id=file_id.volume_id,
-                local_id=file_id.local_id,
+                photo_id=file_id.media_id,
                 big=file_id.thumbnail_source == ThumbnailSource.CHAT_PHOTO_BIG
             )
-        elif file_type in (FileType.THUMBNAIL, FileType.PHOTO):
+        elif file_type == FileType.PHOTO:
             location = raw.types.InputPhotoFileLocation(
                 id=file_id.media_id,
                 access_hash=file_id.access_hash,
@@ -892,7 +892,7 @@ class Client(Methods, Scaffold):
                 id=file_id.media_id,
                 access_hash=file_id.access_hash,
                 file_reference=file_id.file_reference,
-                thumb_size=""
+                thumb_size=file_id.thumbnail_size
             )
 
         limit = 1024 * 1024
@@ -1045,12 +1045,8 @@ class Client(Methods, Scaffold):
         else:
             return file_name
 
-    def guess_mime_type(self, filename: str):
-        extension = os.path.splitext(filename)[1]
-        return self.extensions_to_mime_types.get(extension)
+    def guess_mime_type(self, filename: str) -> Optional[str]:
+        return self.mimetypes.guess_type(filename)[0]
 
-    def guess_extension(self, mime_type: str):
-        extensions = self.mime_types_to_extensions.get(mime_type)
-
-        if extensions:
-            return extensions.split(" ")[0]
+    def guess_extension(self, mime_type: str) -> Optional[str]:
+        return self.mimetypes.guess_extension(mime_type)

@@ -1,5 +1,5 @@
 #  Pyrogram - Telegram MTProto API Client Library for Python
-#  Copyright (C) 2017-2020 Dan <https://github.com/delivrance>
+#  Copyright (C) 2017-2021 Dan <https://github.com/delivrance>
 #
 #  This file is part of Pyrogram.
 #
@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union, List
+from typing import Optional, List
 
 from .input_media import InputMedia
 from ..messages_and_media import MessageEntity
@@ -30,11 +30,12 @@ class InputMediaPhoto(InputMedia):
         media (``str``):
             Photo to send.
             Pass a file_id as string to send a photo that exists on the Telegram servers or
-            pass a file path as string to upload a new photo that exists on your local machine.
-            Sending photo by a URL is currently unsupported.
+            pass a file path as string to upload a new photo that exists on your local machine or
+            pass an HTTP URL as a string for Telegram to get a photo from the Internet.
 
         caption (``str``, *optional*):
-            Caption of the photo to be sent, 0-1024 characters
+            Caption of the photo to be sent, 0-1024 characters.
+            If not specified, the original caption is kept. Pass "" (empty string) to remove the caption.
 
         parse_mode (``str``, *optional*):
             By default, texts are parsed using both Markdown and HTML styles.
@@ -44,14 +45,14 @@ class InputMediaPhoto(InputMedia):
             Pass None to completely disable style parsing.
 
         caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
-            List of special entities that appear in the caption, which can be specified instead of __parse_mode__.
+            List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
     """
 
     def __init__(
         self,
         media: str,
         caption: str = "",
-        parse_mode: Union[str, None] = object,
+        parse_mode: Optional[str] = object,
         caption_entities: List[MessageEntity] = None
     ):
         super().__init__(media, caption, parse_mode, caption_entities)

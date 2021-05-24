@@ -1,5 +1,5 @@
 #  Pyrogram - Telegram MTProto API Client Library for Python
-#  Copyright (C) 2017-2020 Dan <https://github.com/delivrance>
+#  Copyright (C) 2017-2021 Dan <https://github.com/delivrance>
 #
 #  This file is part of Pyrogram.
 #
@@ -16,7 +16,7 @@
 #  You should have received a copy of the GNU Lesser General Public License
 #  along with Pyrogram.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Union
+from typing import Union, List, Optional
 
 from pyrogram import raw
 from pyrogram import types
@@ -30,7 +30,8 @@ class SendCachedMedia(Scaffold):
         chat_id: Union[int, str],
         file_id: str,
         caption: str = "",
-        parse_mode: Union[str, None] = object,
+        parse_mode: Optional[str] = object,
+        caption_entities: List["types.MessageEntity"] = None,
         disable_notification: bool = None,
         reply_to_message_id: int = None,
         schedule_date: int = None,
@@ -40,7 +41,7 @@ class SendCachedMedia(Scaffold):
             "types.ReplyKeyboardRemove",
             "types.ForceReply"
         ] = None
-    ) -> Union["types.Message", None]:
+    ) -> Optional["types.Message"]:
         """Send any media stored on the Telegram servers using a file_id.
 
         This convenience method works with any valid file_id only.
@@ -66,6 +67,9 @@ class SendCachedMedia(Scaffold):
                 Pass "markdown" or "md" to enable Markdown-style parsing only.
                 Pass "html" to enable HTML-style parsing only.
                 Pass None to completely disable style parsing.
+
+            caption_entities (List of :obj:`~pyrogram.types.MessageEntity`):
+                List of special entities that appear in the caption, which can be specified instead of *parse_mode*.
 
             disable_notification (``bool``, *optional*):
                 Sends the message silently.
@@ -98,8 +102,8 @@ class SendCachedMedia(Scaffold):
                 reply_to_msg_id=reply_to_message_id,
                 random_id=self.rnd_id(),
                 schedule_date=schedule_date,
-                reply_markup=reply_markup.write() if reply_markup else None,
-                **await self.parser.parse(caption, parse_mode)
+                reply_markup=await reply_markup.write(self) if reply_markup else None,
+                **await utils.parse_text_entities(self, caption, parse_mode, caption_entities)
             )
         )
 
